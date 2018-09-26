@@ -58,8 +58,8 @@ lr.on('end', function () {
     
     let csvWriterArr=[];
     for(let i in data){
-       data[i].session= _.uniq(data[i].session);
-       data[i].count=data[i].session.length
+       data[i].session = _.uniq(data[i].session);
+       data[i].count = data[i].session.length
 
        csvWriterArr.push(
            {url:i, count:data[i].count}
