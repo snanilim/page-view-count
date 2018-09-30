@@ -17,7 +17,7 @@ var runShellCommand = exec('sh combine_data.sh',
                 process.exit();
             }else{
                 console.log('fetch and combined: data lb1 and lb2 to /combined/log_file.txt');
-                console.log('remove: files from /todays_log_file/lb1 && lb2');
+                console.log('remove: all files from /todays_log_file/lb1* && lb2*');
                 runLogToCsv();
             }
         });
@@ -42,7 +42,7 @@ const runLogToCsv = () => {
         let uri=temp.request.split(" ");
         
         
-        if(  uri[1] != "/generate_log" ){
+        if( uri[1] != "/generate_log" && uri[1] != "/favicon.ico" ){
             let process={
                 name:"",
                 count: 0,
@@ -56,16 +56,17 @@ const runLogToCsv = () => {
                     session:[]
                 }
             }
-            
-            
-            if( temp.upstream_http_X_Upstream==='"-"'){
+            // console.log(temp);
+            if( temp.upstream_http_X_Upstream === '"-"'){
                 data[process.name].count=data[process.name].count+1
                 
             }
+            else if( temp.upstream_http_X_Upstream === '"web-2"' || temp.upstream_http_X_Upstream === '"web-1"'){
+                data[process.name].session.push(temp.upstream_http_Session_Id);
+                
+            }
             else{
-                
                 data[process.name].session.push(temp.upstream_http_X_Upstream);
-                
             }
     
             // console.log(temp.upstream_http_Session_Id)
@@ -77,21 +78,24 @@ const runLogToCsv = () => {
     });
 
     lr.on('end', function () {
-        
+        // console.log(data);
         let csvWriterArr=[];
         for(let i in data){
-        data[i].session = _.uniq(data[i].session);
-        data[i].count = data[i].session.length
+            data[i].session = _.uniq(data[i].session);
+            data[i].count += data[i].session.length
 
-        csvWriterArr.push(
-            {url:i, count:data[i].count}
-        )
+            csvWriterArr.push(
+                {url:i, count:data[i].count}
+            )
         }
         const fields = ['url', 'count'];
+
 
         var date = new Date();
         date.setDate(date.getDate() - 1);
         var lastDate = date.toISOString().slice(0,10);
+
+
         const fileName = `DAILY_UNIQUE_VISITOR_LOG_${lastDate}`
         const csvWriter = createCsvWriter({
             path: `all_csv_file/${fileName}.csv`,
@@ -100,6 +104,8 @@ const runLogToCsv = () => {
                 {id: 'count', title: 'COUNT'}
             ]
         });
+
+
         csvWriter.writeRecords(csvWriterArr)       // returns a promise
         .then(() => {
             console.log('Done: completed converting file to csv');
