@@ -1,11 +1,11 @@
 
-const fs = require('fs');
-const source = '$remote_addr - $remote_user [$time_local] "$request  $status $body_bytes_sent $request_time $d "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$upstream_response_time" $x "$http_msisdn" "$upstream_http_X_Upstream" "$upstream_http_Session_Id"\n';
-const parser = require('nginx-log-parser')(source);
-const _= require('underscore');
-const Json2csvParser = require('json2csv').Parser;
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const exec = require('child_process').exec;
+var fs = require('fs');
+var source = '$remote_addr - $remote_user [$time_local] "$request  $status $body_bytes_sent $request_time $d "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$upstream_response_time" $x "$http_msisdn" "$upstream_http_X_Upstream" "$upstream_http_Session_Id"\n';
+var parser = require('nginx-log-parser')(source);
+var _= require('underscore');
+var Json2csvParser = require('json2csv').Parser;
+var createCsvWriter = require('csv-writer').createObjectCsvWriter;
+var exec = require('child_process').exec;
 
 
 var runShellCommand = exec('sh combine_data.sh',
@@ -24,7 +24,7 @@ var runShellCommand = exec('sh combine_data.sh',
 
         
 
-const runLogToCsv = () => {
+var runLogToCsv = () => {
     console.log('Start Processing: log_file.txt to csv.......');
 
     var LineByLineReader = require('line-by-line'),
@@ -38,12 +38,12 @@ const runLogToCsv = () => {
 
     lr.on('line', function (line) {
         // 'line' contains the current line without the trailing newline character.
-        let temp= parser(line);
-        let uri=temp.request.split(" ");
+        var temp= parser(line);
+        var uri=temp.request.split(" ");
         
         
         if( uri[1] != "/generate_log" && uri[1] != "/favicon.ico" ){
-            let process={
+            var process={
                 name:"",
                 count: 0,
                 session: []
@@ -57,6 +57,7 @@ const runLogToCsv = () => {
                 }
             }
             // console.log(temp);
+
             if( temp.upstream_http_X_Upstream === '"-"'){
                 data[process.name].count=data[process.name].count+1
                 
@@ -78,26 +79,27 @@ const runLogToCsv = () => {
     });
 
     lr.on('end', function () {
-        // console.log(data);
-        let csvWriterArr=[];
-        for(let i in data){
+        console.log('dhukse');
+        var csvWriterArr=[];
+        for(var i in data){
             data[i].session = _.uniq(data[i].session);
             data[i].count += data[i].session.length
-
             csvWriterArr.push(
                 {url:i, count:data[i].count}
             )
         }
-        const fields = ['url', 'count'];
+
+
+        var fields = ['url', 'count'];
 
 
         var date = new Date();
         date.setDate(date.getDate() - 1);
         var lastDate = date.toISOString().slice(0,10);
 
-
-        const fileName = `DAILY_UNIQUE_VISITOR_LOG_${lastDate}`
-        const csvWriter = createCsvWriter({
+        console.log('csvwrite');
+        var fileName = `DAILY_UNIQUE_VISITOR_LOG_${lastDate}`
+        var csvWriter = createCsvWriter({
             path: `all_csv_file/${fileName}.csv`,
             header: [
                 {id: 'url', title: 'URL'},
@@ -105,17 +107,25 @@ const runLogToCsv = () => {
             ]
         });
 
-
-        csvWriter.writeRecords(csvWriterArr)       // returns a promise
+        console.log('csvwrite2');
+        csvWriter.writeRecords(csvWriterArr)       
+        // returns a promise
         .then(() => {
-            console.log('Done: completed converting file to csv');
+            console.log('Done: compvared converting file to csv');
+            process.exit();
+        })
+        .catch((err)=>{
+            console.log(err);
+            process.exit();
         });
+
+        // console.log('Done: compvared converting file to csv');
         
     });
 }
 
 
-// const outPut = fs.readFileSync('access.log-2018-09-22-1537552801', 'utf8')
+// var outPut = fs.readFileSync('access.log-2018-09-22-1537552801', 'utf8')
 
 
 
